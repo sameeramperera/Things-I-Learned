@@ -92,11 +92,10 @@ export default function AdminPage() {
         </button>
       </div>
       <p className="mt-2 max-w-xl text-sm text-muted">
-        Writes a new <code className="font-mono text-tag">.mdx</code> file straight into{" "}
-        <code className="font-mono text-tag">content/til/</code> on disk. This only works while
-        you&apos;re running the site locally with <code className="font-mono text-tag">npm run dev</code> —
-        it&apos;s disabled once deployed. After saving, review the file and{" "}
-        <code className="font-mono text-tag">git commit &amp; push</code> it like any other change.
+        Writes a new <code className="font-mono text-tag">.mdx</code> file into{" "}
+        <code className="font-mono text-tag">content/til/</code>. Locally this writes straight to
+        disk. On the deployed site it commits the file directly to GitHub via the Contents API,
+        which triggers a redeploy so the note goes live shortly after.
       </p>
 
       <form onSubmit={handleSubmit} className="index-card mt-6 space-y-4 rounded-sm border border-line px-6 py-6">
