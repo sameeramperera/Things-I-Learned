@@ -18,7 +18,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (pathname === "/api/til" && req.method === "POST" && !authenticated) {
+  if (pathname === "/api/til" && (req.method === "POST" || req.method === "DELETE") && !authenticated) {
     return NextResponse.json({ error: "Unauthorized. Log in at /admin/login." }, { status: 401 });
   }
 

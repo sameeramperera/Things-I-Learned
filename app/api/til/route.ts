@@ -1,63 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import fs from "fs";
 import path from "path";
 import { TIL_DIR, getAllTils, slugify } from "@/lib/til";
+import { useGitHub, putTilFile, deleteTilFile } from "@/lib/github";
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_REPO = process.env.GITHUB_REPO; // "owner/repo"
-const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
-
-/**
- * Vercel's filesystem is read-only/ephemeral, so writing straight to disk
- * (the local-dev path below) is a no-op in production. Instead we commit the
- * new .mdx file to the repo via the GitHub Contents API; a push to the
- * tracked branch triggers a normal redeploy that picks it up at build time.
- */
-async function commitToGitHub(filename: string, fileContents: string, commitMessage: string) {
-  const [owner, repo] = (GITHUB_REPO as string).split("/");
-  const apiPath = `content/til/${filename}`;
-  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${apiPath}`;
-  const headers = {
-    Authorization: `Bearer ${GITHUB_TOKEN}`,
-    Accept: "application/vnd.github+json",
-    "Content-Type": "application/json",
-  };
-
-  const existingRes = await fetch(`${url}?ref=${GITHUB_BRANCH}`, { headers });
-  if (existingRes.status === 200) {
-    throw new Error(`DUPLICATE:${filename}`);
-  }
-  if (existingRes.status !== 404) {
-    const err = await existingRes.json().catch(() => ({}));
-    throw new Error(err.message || `GitHub API error checking for existing file (${existingRes.status})`);
-  }
-
-  const putRes = await fetch(url, {
-    method: "PUT",
-    headers,
-    body: JSON.stringify({
-      message: commitMessage,
-      content: Buffer.from(fileContents, "utf8").toString("base64"),
-      branch: GITHUB_BRANCH,
-    }),
-  });
-  if (!putRes.ok) {
-    const err = await putRes.json().catch(() => ({}));
-    throw new Error(err.message || `GitHub API error committing file (${putRes.status})`);
-  }
-  return putRes.json();
+function revalidateTils() {
+  revalidateTag("tils");
+  revalidatePath("/");
+  revalidatePath("/til");
 }
 
 export async function GET() {
-  const tils = getAllTils()
+  const tils = (await getAllTils())
     .sort((a, b) => (a.date < b.date ? 1 : -1))
     .map((t) => ({ slug: t.slug, title: t.title, date: t.date, tags: t.tags }));
   return NextResponse.json({ tils });
 }
 
 export async function POST(req: NextRequest) {
-  const useGitHub = Boolean(GITHUB_TOKEN && GITHUB_REPO);
-
   if (process.env.NODE_ENV === "production" && !useGitHub) {
     return NextResponse.json(
       {
@@ -105,7 +66,7 @@ ${body.content.trim()}
 
   if (useGitHub) {
     try {
-      await commitToGitHub(`${slug}.mdx`, file, `Add TIL note: ${title}`);
+      await putTilFile(`${slug}.mdx`, file, `Add TIL note: ${title}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown GitHub API error.";
       if (message.startsWith("DUPLICATE:")) {
@@ -116,6 +77,7 @@ ${body.content.trim()}
       }
       return NextResponse.json({ error: `Failed to commit to GitHub: ${message}` }, { status: 502 });
     }
+    revalidateTils();
     return NextResponse.json({ slug, title, date, tags }, { status: 201 });
   }
 
@@ -129,6 +91,49 @@ ${body.content.trim()}
   }
 
   fs.writeFileSync(filePath, file, "utf8");
+  revalidateTils();
 
   return NextResponse.json({ slug, title, date, tags }, { status: 201 });
+}
+
+export async function DELETE(req: NextRequest) {
+  if (process.env.NODE_ENV === "production" && !useGitHub) {
+    return NextResponse.json(
+      {
+        error:
+          "The admin delete API is disabled in production because GITHUB_TOKEN / GITHUB_REPO are not configured.",
+      },
+      { status: 403 }
+    );
+  }
+
+  const slug = req.nextUrl.searchParams.get("slug");
+  if (!slug || slugify(slug) !== slug) {
+    return NextResponse.json({ error: "A valid slug is required." }, { status: 400 });
+  }
+
+  if (useGitHub) {
+    try {
+      await deleteTilFile(`${slug}.mdx`, `Delete TIL note: ${slug}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown GitHub API error.";
+      if (message.startsWith("NOT_FOUND:")) {
+        return NextResponse.json({ error: `No note with slug "${slug}" was found.` }, { status: 404 });
+      }
+      return NextResponse.json({ error: `Failed to delete from GitHub: ${message}` }, { status: 502 });
+    }
+    revalidateTils();
+    revalidatePath(`/til/${slug}`);
+    return NextResponse.json({ slug }, { status: 200 });
+  }
+
+  const filePath = path.join(TIL_DIR, `${slug}.mdx`);
+  if (!fs.existsSync(filePath)) {
+    return NextResponse.json({ error: `No note with slug "${slug}" was found.` }, { status: 404 });
+  }
+  fs.unlinkSync(filePath);
+  revalidateTils();
+  revalidatePath(`/til/${slug}`);
+
+  return NextResponse.json({ slug }, { status: 200 });
 }

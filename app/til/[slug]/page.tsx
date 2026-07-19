@@ -2,17 +2,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getAllTils, getTilBySlug, getBacklinks } from "@/lib/til";
+import DeleteNoteButton from "@/components/DeleteNoteButton";
 
-export function generateStaticParams() {
-  return getAllTils().map((t) => ({ slug: t.slug }));
+export async function generateStaticParams() {
+  return (await getAllTils()).map((t) => ({ slug: t.slug }));
 }
 
-export default function TilPage({ params }: { params: { slug: string } }) {
-  const til = getTilBySlug(params.slug);
+export default async function TilPage({ params }: { params: { slug: string } }) {
+  const til = await getTilBySlug(params.slug);
   if (!til) notFound();
 
-  const forwardLinks = getAllTils().filter((t) => til.rawWikiLinks.includes(t.slug));
-  const backlinks = getBacklinks(til.slug).filter((b) => b.slug !== til.slug);
+  const forwardLinks = (await getAllTils()).filter((t) => til.rawWikiLinks.includes(t.slug));
+  const backlinks = (await getBacklinks(til.slug)).filter((b) => b.slug !== til.slug);
 
   return (
     <main className="mx-auto max-w-2xl">
@@ -42,6 +43,8 @@ export default function TilPage({ params }: { params: { slug: string } }) {
         <div className="prose-til mt-6 text-[15px] text-ink">
           <MDXRemote source={til.content} />
         </div>
+
+        <DeleteNoteButton slug={til.slug} title={til.title} />
       </article>
 
       {(forwardLinks.length > 0 || backlinks.length > 0) && (

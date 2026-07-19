@@ -2,9 +2,9 @@ import Link from "next/link";
 import { buildGraph, getAllTils } from "@/lib/til";
 import KnowledgeGraph from "@/components/KnowledgeGraph";
 
-export default function HomePage() {
-  const graph = buildGraph();
-  const tils = getAllTils().sort((a, b) => (a.date < b.date ? 1 : -1));
+export default async function HomePage() {
+  const graph = await buildGraph();
+  const tils = (await getAllTils()).sort((a, b) => (a.date < b.date ? 1 : -1));
 
   return (
     <main>

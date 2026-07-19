@@ -1,8 +1,8 @@
 import { getAllTils } from "@/lib/til";
 import TilIndexClient from "@/components/TilIndexClient";
 
-export default function TilIndexPage() {
-  const tils = getAllTils()
+export default async function TilIndexPage() {
+  const tils = (await getAllTils())
     .sort((a, b) => (a.date < b.date ? 1 : -1))
     .map((t) => ({ slug: t.slug, title: t.title, date: t.date, tags: t.tags, content: t.content }));
 
