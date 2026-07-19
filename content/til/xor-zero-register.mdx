@@ -1,0 +1,25 @@
+---
+title: "Why assembly uses `xor reg, reg` instead of `mov reg, 0`"
+date: "2026-07-20"
+tags: ["assembly", "cpu"]
+---
+
+One of the most common assembly idioms is zeroing a register by XORing it with itself. Since any value XOR itself is always `0`, the register is cleared without needing an immediate constant.
+
+```asm
+xor ax, ax
+```
+
+This works because every bit cancels itself out:
+
+```text
+10101010 XOR 10101010 = 00000000
+```
+
+Although this is functionally equivalent to:
+
+```asm
+mov ax, 0
+```
+
+`xor reg, reg` is typically preferred because it encodes into fewer bytes, is recognized by modern CPUs as a register-zeroing instruction, and can avoid unnecessary dependencies on the register's previous value. It's a small optimization that has become standard practice in low-level programming.

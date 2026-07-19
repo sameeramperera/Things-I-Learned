@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Special Elite", monospace;
+  --font-body: "IBM Plex Serif", serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --thread-color: #b23a2f;
+}
+
+html,
+body {
+  background-color: #3e2b23;
+  color: #f3e9d2;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 8% 12%, rgba(255, 255, 255, 0.05) 0, transparent 6%),
+    radial-gradient(circle at 22% 38%, rgba(255, 255, 255, 0.04) 0, transparent 5%),
+    radial-gradient(circle at 63% 71%, rgba(255, 255, 255, 0.045) 0, transparent 5.5%),
+    radial-gradient(circle at 88% 15%, rgba(255, 255, 255, 0.035) 0, transparent 5%),
+    radial-gradient(circle at 45% 90%, rgba(0, 0, 0, 0.12) 0, transparent 6%),
+    linear-gradient(#3e2b23, #3e2b23);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: #e8b23d;
+  color: #241f1a;
+}
+
+a {
+  color: inherit;
+}
+
+.index-card {
+  background-color: #f3e9d2;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 27px,
+    #d8c79e 28px
+  );
+  color: #241f1a;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+.prose-til p {
+  margin: 1em 0;
+  line-height: 1.7;
+}
+.prose-til h1,
+.prose-til h2,
+.prose-til h3 {
+  font-family: var(--font-display);
+  margin-top: 1.4em;
+  margin-bottom: 0.5em;
+}
+.prose-til code {
+  background: #e6d8b8;
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+.prose-til pre {
+  background: #241f1a;
+  color: #f3e9d2;
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 1.2em 0;
+}
+.prose-til pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+.prose-til a {
+  color: #b23a2f;
+  text-decoration: underline;
+  text-decoration-color: #b23a2f88;
+  text-underline-offset: 3px;
+}
+.prose-til a:hover {
+  color: #7a2a22;
+}
